@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
         await sql`
           INSERT INTO clients (
             client_code, client_name, client_group, status,
+            excel_status,
             contact_name, salutation, client_email,
             postal_address_1, suburb, state, postcode, country,
             opc_director, opc_director_2, opc_manager, opc_crm,
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
           ) VALUES (
             ${row.client_code}, ${row.client_name || ''}, ${row.client_group || ''},
             ${clientStatus},
+            ${row.status || null},
             ${row.contact_name || null}, ${row.salutation || null}, ${row.client_email || null},
             ${row.postal_address_1 || null}, ${row.suburb || null},
             ${row.state || null}, ${row.postcode || null}, ${row.country || null},
@@ -178,6 +180,7 @@ export async function POST(request: NextRequest) {
             UPDATE clients SET
               client_name = ${row.client_name || existingClient.client_name},
               client_group = ${row.client_group || existingClient.client_group},
+              excel_status = COALESCE(${row.status || null}, excel_status),
               contact_name = COALESCE(${row.contact_name || null}, contact_name),
               client_email = CASE WHEN ${lockedFields.includes('client_email')} THEN client_email ELSE COALESCE(${row.client_email || null}, client_email) END,
               salutation = CASE WHEN ${lockedFields.includes('salutation')} THEN salutation ELSE COALESCE(${row.salutation || null}, salutation) END,
