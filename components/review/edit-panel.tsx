@@ -215,7 +215,7 @@ export function EditPanel({ clientId, open, onClose, onSaved }: EditPanelProps) 
       />
 
       {/* Side panel */}
-      <div className="relative z-10 ml-auto bg-background border-l border-border w-full max-w-[560px] flex flex-col h-full shadow-2xl overflow-hidden">
+      <div className="relative z-10 ml-auto bg-background border-l border-border w-full max-w-[720px] md:basis-1/3 flex flex-col h-full shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between px-5 py-4 border-b border-border shrink-0">
           <div>

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { Search, Upload, RefreshCw, FileText, CheckSquare, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import Image from 'next/image'
+import { Search, Upload, RefreshCw, CheckSquare, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { StatsBar } from '@/components/dashboard/stats-bar'
 import { ClientTable } from '@/components/dashboard/client-table'
 import { SyncDialog } from '@/components/upload/sync-dialog'
@@ -136,6 +137,10 @@ export default function DashboardPage() {
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
+  const selectedClients = clients.filter((c) => selectedIds.has(c.id))
+  const hasSentOrNoSaSelected = selectedClients.some(
+    (c) => c.status === 'sent' || c.status === 'no_sa'
+  )
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
@@ -143,8 +148,14 @@ export default function DashboardPage() {
       <header className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 bg-primary rounded-sm flex items-center justify-center">
-              <FileText size={11} className="text-primary-foreground" />
+            <div className="w-6 h-6 rounded-[6px] overflow-hidden flex items-center justify-center bg-primary">
+              <Image
+                src={require('../ascentium-icon.png')}
+                alt="Ascentium"
+                width={24}
+                height={24}
+                className="w-full h-full object-cover rounded-[6px]"
+              />
             </div>
             <span className="text-sm font-semibold tracking-tight">EL Manager</span>
           </div>
@@ -182,12 +193,17 @@ export default function DashboardPage() {
       </header>
 
       {/* Stats / filter bar */}
-      <StatsBar stats={stats} activeFilter={statusFilter} onFilter={handleFilter} />
+      <div className="flex justify-center border-b border-border bg-background/80">
+        <div className="w-[90%]">
+          <StatsBar stats={stats} activeFilter={statusFilter} onFilter={handleFilter} />
+        </div>
+      </div>
 
       {/* Search + batch actions */}
-      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border shrink-0 bg-muted/30">
-        {/* Search */}
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex items-center justify-center py-2.5 border-b border-border shrink-0 bg-muted/30">
+        <div className="flex items-center gap-3 w-[90%]">
+          {/* Search */}
+          <div className="relative flex-1 max-w-sm">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <input
             type="text"
@@ -196,101 +212,106 @@ export default function DashboardPage() {
             placeholder="Search code, group, name, email…"
             className="w-full pl-8 pr-3 py-1.5 text-xs bg-background border border-border rounded focus:outline-none focus:border-ring"
           />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X size={12} />
-            </button>
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          <span className="text-xs text-muted-foreground font-mono">
+            {total.toLocaleString()} client{total !== 1 ? 's' : ''}
+          </span>
+
+          {/* Batch actions */}
+          {selectedIds.size > 0 && !hasSentOrNoSaSelected && (
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="text-xs text-muted-foreground">
+                {selectedIds.size} selected
+              </span>
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-foreground text-background rounded hover:opacity-90 transition-opacity font-medium disabled:opacity-40"
+              >
+                {generating ? (
+                  <RefreshCw size={11} className="animate-spin" />
+                ) : (
+                  <CheckSquare size={11} />
+                )}
+                {generating ? 'Generating…' : `Generate ${selectedIds.size} EL${selectedIds.size > 1 ? 's' : ''}`}
+              </button>
+              <button
+                onClick={() => handleMarkSent(Array.from(selectedIds))}
+                className="px-3 py-1.5 text-xs border border-border rounded hover:bg-muted transition-colors"
+              >
+                Mark Sent
+              </button>
+              <button
+                onClick={handleClearAll}
+                className="p-1.5 hover:bg-muted rounded transition-colors text-muted-foreground"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
+          {/* Generate result toast */}
+          {generateResult && (
+            <div className="flex items-center gap-2 ml-auto bg-foreground text-background text-xs px-3 py-1.5 rounded">
+              <CheckSquare size={11} className="text-primary" />
+              {generateResult}
+              <button onClick={() => setGenerateResult(null)}>
+                <X size={11} />
+              </button>
+            </div>
           )}
         </div>
-
-        <span className="text-xs text-muted-foreground font-mono">
-          {total.toLocaleString()} client{total !== 1 ? 's' : ''}
-        </span>
-
-        {/* Batch actions */}
-        {selectedIds.size > 0 && (
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs text-muted-foreground">
-              {selectedIds.size} selected
-            </span>
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-foreground text-background rounded hover:opacity-90 transition-opacity font-medium disabled:opacity-40"
-            >
-              {generating ? (
-                <RefreshCw size={11} className="animate-spin" />
-              ) : (
-                <CheckSquare size={11} />
-              )}
-              {generating ? 'Generating…' : `Generate ${selectedIds.size} EL${selectedIds.size > 1 ? 's' : ''}`}
-            </button>
-            <button
-              onClick={() => handleMarkSent(Array.from(selectedIds))}
-              className="px-3 py-1.5 text-xs border border-border rounded hover:bg-muted transition-colors"
-            >
-              Mark Sent
-            </button>
-            <button
-              onClick={handleClearAll}
-              className="p-1.5 hover:bg-muted rounded transition-colors text-muted-foreground"
-            >
-              <X size={12} />
-            </button>
-          </div>
-        )}
-
-        {/* Generate result toast */}
-        {generateResult && (
-          <div className="flex items-center gap-2 ml-auto bg-foreground text-background text-xs px-3 py-1.5 rounded">
-            <CheckSquare size={11} className="text-primary" />
-            {generateResult}
-            <button onClick={() => setGenerateResult(null)}>
-              <X size={11} />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Table */}
-      <ClientTable
-        clients={clients}
-        loading={loading}
-        selectedIds={selectedIds}
-        onToggleSelect={handleToggleSelect}
-        onSelectAll={handleSelectAll}
-        onClearAll={handleClearAll}
-        onEditClient={(id) => setEditClientId(id)}
-        onMarkSent={handleMarkSent}
-      />
+      <div className="flex-1 flex justify-center overflow-hidden">
+        <div className="w-[90%] flex flex-col">
+          <ClientTable
+            clients={clients}
+            loading={loading}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            onSelectAll={handleSelectAll}
+            onClearAll={handleClearAll}
+            onEditClient={(id) => setEditClientId(id)}
+            onMarkSent={handleMarkSent}
+          />
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-border shrink-0 bg-muted/20">
-          <span className="text-xs text-muted-foreground">
-            Page {page} of {totalPages} · {total} total
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="p-1.5 hover:bg-muted rounded transition-colors disabled:opacity-30"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="p-1.5 hover:bg-muted rounded transition-colors disabled:opacity-30"
-            >
-              <ChevronRight size={14} />
-            </button>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between py-2.5 border-t border-border shrink-0 bg-muted/20">
+              <span className="text-xs text-muted-foreground">
+                Page {page} of {totalPages} · {total} total
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="p-1.5 hover:bg-muted rounded transition-colors disabled:opacity-30"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="p-1.5 hover:bg-muted rounded transition-colors disabled:opacity-30"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          )}
           </div>
-        </div>
-      )}
+      </div>
 
       {/* Dialogs */}
       <SyncDialog

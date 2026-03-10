@@ -97,7 +97,7 @@ export function ClientTable({
             <Th field="total_oxygen_fee" label="Oxygen" />
             <Th field="total_lumiere_fee" label="Lumiere" />
             <Th field="last_synced_at" label="Synced" />
-            <th className="px-3 py-2.5 w-16" />
+            <th className="px-3 py-2.5 w-16 sticky right-0 bg-background z-20" />
           </tr>
         </thead>
         <tbody>
@@ -169,10 +169,10 @@ export function ClientTable({
                         })
                       : '—'}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className="px-3 py-2.5 sticky right-0 bg-background">
                     <button
                       onClick={() => onEditClient(client.id)}
-                      className="p-1.5 hover:bg-muted rounded transition-colors text-muted-foreground hover:text-foreground"
+                      className="p-1.5 rounded transition-colors bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
                       title="Edit client"
                     >
                       <FileEdit size={13} />
