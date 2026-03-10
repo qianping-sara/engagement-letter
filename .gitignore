@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+
+# Env and secrets (do not commit)
+.env
+.env.local
+.env.*.local
+
+# Debug / IDE
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# Build / cache
+.turbo/
+*.tsbuildinfo
+
+# v0 runtime files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
