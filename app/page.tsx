@@ -150,7 +150,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-[6px] overflow-hidden flex items-center justify-center bg-primary">
               <Image
-                src={require('../ascentium-icon.png')}
+                src="/ascentium-icon.png"
                 alt="Ascentium"
                 width={24}
                 height={24}
