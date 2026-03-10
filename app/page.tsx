@@ -98,12 +98,26 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ client_ids: Array.from(selectedIds) }),
       })
-      const data = await res.json()
-      if (data.success) {
-        setGenerateResult(`${data.results.length} EL${data.results.length > 1 ? 's' : ''} marked as Generated`)
-        fetchClients()
-        setSelectedIds(new Set())
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }))
+        setGenerateResult(err?.error ? `Error: ${err.error}` : 'Generate failed')
+        return
       }
+      const blob = await res.blob()
+      const disposition = res.headers.get('Content-Disposition')
+      const match = disposition?.match(/filename="?([^";]+)"?/)
+      const filename = match?.[1] ?? (selectedIds.size === 1 ? 'EL.docx' : 'ELs-2026.zip')
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+      setGenerateResult(`${selectedIds.size} EL${selectedIds.size > 1 ? 's' : ''} generated and downloaded`)
+      fetchClients()
+      setSelectedIds(new Set())
+    } catch (e) {
+      setGenerateResult(`Error: ${e instanceof Error ? e.message : 'Generate failed'}`)
     } finally {
       setGenerating(false)
     }

@@ -113,28 +113,30 @@ export async function POST(request: NextRequest) {
         const lockedFields: string[] = existingClient.locked_fields || []
 
         // Check for conflicts on locked fields
-        const feeFieldsToCheck: Array<{ field: keyof ExcelRow; dbField: string }> = [
-          { field: 'tax_and_compliance_fee', dbField: 'tax_and_compliance_fee' },
-          { field: 'asic_fee', dbField: 'asic_fee' },
-          { field: 'quarterly_activity_fee', dbField: 'quarterly_activity_fee' },
-          { field: 'bookkeeping_fee', dbField: 'bookkeeping_fee' },
-          { field: 'fbt_fee', dbField: 'fbt_fee' },
-          { field: 'family_office_fee', dbField: 'family_office_fee' },
-          { field: 'annual_tax_planning_fee', dbField: 'annual_tax_planning_fee' },
-          { field: 'adhoc_advice_fee', dbField: 'adhoc_advice_fee' },
-          { field: 'financial_reports_fee', dbField: 'financial_reports_fee' },
-          { field: 'smsf_tax_compliance_fee', dbField: 'smsf_tax_compliance_fee' },
-          { field: 'salutation', dbField: 'salutation' },
-          { field: 'client_email', dbField: 'client_email' },
+        const feeFieldsToCheck: Array<{ field: keyof ExcelRow; dbField: string; isNumeric: boolean }> = [
+          { field: 'tax_and_compliance_fee', dbField: 'tax_and_compliance_fee', isNumeric: true },
+          { field: 'asic_fee', dbField: 'asic_fee', isNumeric: true },
+          { field: 'quarterly_activity_fee', dbField: 'quarterly_activity_fee', isNumeric: true },
+          { field: 'bookkeeping_fee', dbField: 'bookkeeping_fee', isNumeric: true },
+          { field: 'fbt_fee', dbField: 'fbt_fee', isNumeric: true },
+          { field: 'family_office_fee', dbField: 'family_office_fee', isNumeric: true },
+          { field: 'annual_tax_planning_fee', dbField: 'annual_tax_planning_fee', isNumeric: true },
+          { field: 'adhoc_advice_fee', dbField: 'adhoc_advice_fee', isNumeric: true },
+          { field: 'financial_reports_fee', dbField: 'financial_reports_fee', isNumeric: true },
+          { field: 'smsf_tax_compliance_fee', dbField: 'smsf_tax_compliance_fee', isNumeric: true },
+          { field: 'salutation', dbField: 'salutation', isNumeric: false },
+          { field: 'client_email', dbField: 'client_email', isNumeric: false },
         ]
 
         const rowConflicts: ConflictItem[] = []
         let hasUnlockedChanges = false
 
-        for (const { field, dbField } of feeFieldsToCheck) {
+        for (const { field, dbField, isNumeric } of feeFieldsToCheck) {
           const excelVal = row[field]
           const dbVal = existingClient[dbField]
-          if (excelVal !== undefined && excelVal !== dbVal) {
+          const excelNorm = isNumeric ? Number(excelVal ?? 0) : String(excelVal ?? '').trim()
+          const dbNorm = isNumeric ? Number(dbVal ?? 0) : String(dbVal ?? '').trim()
+          if (excelVal !== undefined && excelNorm !== dbNorm) {
             if (lockedFields.includes(dbField)) {
               rowConflicts.push({
                 client_code: row.client_code,
@@ -152,7 +154,7 @@ export async function POST(request: NextRequest) {
 
         conflicts.push(...rowConflicts)
 
-        // Only update unlocked fields that changed
+        // Only count as "updated" when fee/content actually changed; always sync excel_status from sheet
         if (hasUnlockedChanges) {
           const oxygenSub =
             (row.tax_and_compliance_fee ?? existingClient.tax_and_compliance_fee) +
@@ -220,6 +222,13 @@ export async function POST(request: NextRequest) {
             client_name: existingClient.client_name,
           })
         } else {
+          // No content change: still sync excel_status (Status column from sheet) so it's never left empty
+          await sql`
+            UPDATE clients SET
+              excel_status = COALESCE(${row.status ?? null}, excel_status),
+              last_synced_at = NOW()
+            WHERE id = ${existingClient.id}
+          `
           skipped++
         }
       }
