@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import Image from 'next/image'
+import Link from 'next/link'
 import { Search, Upload, RefreshCw, CheckSquare, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { AppHeader } from '@/components/layout/app-header'
 import { StatsBar } from '@/components/dashboard/stats-bar'
 import { ClientTable } from '@/components/dashboard/client-table'
 import { SyncDialog } from '@/components/upload/sync-dialog'
@@ -144,53 +145,41 @@ export default function DashboardPage() {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-[6px] overflow-hidden flex items-center justify-center bg-primary">
-              <Image
-                src="/ascentium-icon.png"
-                alt="Ascentium"
-                width={24}
-                height={24}
-                className="w-full h-full object-cover rounded-[6px]"
-              />
-            </div>
-            <span className="text-sm font-semibold tracking-tight">EL Manager</span>
-          </div>
-          <span className="text-border">|</span>
-          <span className="text-xs text-muted-foreground">
-            Engagement Letter Automation — 30 June 2026
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {lastSync && (
-            <span className="text-xs text-muted-foreground hidden md:inline">
-              Last sync:{' '}
-              {new Date(lastSync.synced_at).toLocaleDateString('en-AU', {
-                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-              })}{' '}
-              · +{lastSync.rows_added} new · {lastSync.rows_updated} updated
-            </span>
-          )}
-          <button
-            onClick={() => fetchClients()}
-            className="p-1.5 hover:bg-muted rounded transition-colors text-muted-foreground hover:text-foreground"
-            title="Refresh"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          </button>
-          <button
-            onClick={() => setSyncOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded hover:opacity-90 transition-opacity font-medium"
-          >
-            <Upload size={12} />
-            Sync Excel
-          </button>
-        </div>
-      </header>
+      <AppHeader
+        right={
+          <>
+            {lastSync && (
+              <span className="text-xs text-muted-foreground hidden md:inline">
+                Last sync:{' '}
+                {new Date(lastSync.synced_at).toLocaleDateString('en-AU', {
+                  day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                })}{' '}
+                · +{lastSync.rows_added} new · {lastSync.rows_updated} updated
+              </span>
+            )}
+            <button
+              onClick={() => fetchClients()}
+              className="p-1.5 hover:bg-muted rounded transition-colors text-muted-foreground hover:text-foreground"
+              title="Refresh"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            </button>
+            <button
+              onClick={() => setSyncOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded hover:opacity-90 transition-opacity font-medium"
+            >
+              <Upload size={12} />
+              Sync Excel
+            </button>
+            <Link
+              href="/zen"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-foreground text-background rounded hover:opacity-90 transition-opacity font-medium"
+            >
+              Zen Mode
+            </Link>
+          </>
+        }
+      />
 
       {/* Stats / filter bar */}
       <div className="flex justify-center border-b border-border bg-background/80">

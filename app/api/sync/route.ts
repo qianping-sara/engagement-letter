@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     let added = 0
     let updated = 0
     let skipped = 0
+    const clientIds: number[] = []
     const addedClients: { client_code: string; client_name: string }[] = []
     const updatedClients: { client_code: string; client_name: string }[] = []
     const conflicts: ConflictItem[] = []
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
           if (s.includes('no sa') || s === 'no_sa') clientStatus = 'no_sa'
         }
 
-        await sql`
+        const insertedRows = await sql`
           INSERT INTO clients (
             client_code, client_name, client_group, status,
             excel_status,
@@ -102,7 +103,9 @@ export async function POST(request: NextRequest) {
             ${row.paper_copy ?? false},
             ${row.comments || null}, NOW()
           )
+          RETURNING id
         `
+        if (insertedRows.length > 0) clientIds.push((insertedRows[0] as { id: number }).id)
         added++
         addedClients.push({
           client_code: row.client_code,
@@ -110,6 +113,7 @@ export async function POST(request: NextRequest) {
         })
       } else {
         const existingClient = existing[0]
+        clientIds.push((existingClient as { id: number }).id)
         const lockedFields: string[] = existingClient.locked_fields || []
 
         // Check for conflicts on locked fields
@@ -253,6 +257,7 @@ export async function POST(request: NextRequest) {
       added,
       updated,
       skipped,
+      client_ids: clientIds,
       conflicts,
       added_clients: addedClients,
       updated_clients: updatedClients,
